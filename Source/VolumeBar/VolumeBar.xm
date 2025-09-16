@@ -11,7 +11,6 @@ static BOOL volumeBar = YTMU(@"YTMUltimateIsEnabled") && YTMU(@"volBar");
 @property (readonly, nonatomic) BOOL isExpanded;
 @property (nonatomic, strong) UIView *tabView;
 @property (nonatomic) long long currentLayout;
-@property (nonatomic, strong) GSVolBar *volumeBar;
 
 - (void)updateVolBarVisibility;
 @end
