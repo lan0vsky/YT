@@ -1,4 +1,5 @@
 #import <UIKit/UIKit.h>
+#import <objc/runtime.h>
 #import <Foundation/Foundation.h>
 #import "Headers/Localization.h"
 #import "Headers/YTMToastController.h"
@@ -8,8 +9,13 @@
 #define ytmuInt(key) [[[NSUserDefaults standardUserDefaults] dictionaryForKey:@"YTMUltimate"][key] integerValue]
 
 %hook YTPlayerViewController
-%property (nonatomic, strong) NSMutableDictionary *sponsorBlockValues;
+- (void)setSponsorBlockValues:(NSMutableDictionary *)dict {
+    objc_setAssociatedObject(self, @selector(sponsorBlockValues), dict, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
 
+- (NSMutableDictionary *)sponsorBlockValues {
+    return objc_getAssociatedObject(self, @selector(sponsorBlockValues));
+}
 - (void)playbackController:(id)arg1 didActivateVideo:(id)arg2 withPlaybackData:(id)arg3 {
     %orig;
 
