@@ -5,7 +5,8 @@ static BOOL YTMU(NSString *key) {
     return [YTMUltimateDict[key] boolValue];
 }
 
-static BOOL volumeBar = YTMU(@"YTMUltimateIsEnabled") && YTMU(@"volBar");
+// Флаг включения/отключения
+static BOOL volumeBarEnabled = YTMU(@"YTMUltimateIsEnabled") && YTMU(@"volBar");
 
 @interface YTMWatchView: UIView
 @property (readonly, nonatomic) BOOL isExpanded;
@@ -15,14 +16,28 @@ static BOOL volumeBar = YTMU(@"YTMUltimateIsEnabled") && YTMU(@"volBar");
 - (void)updateVolBarVisibility;
 @end
 
+#import <objc/runtime.h>
+
 %hook YTMWatchView
-%property (nonatomic, strong) GSVolBar *volumeBar;
+
+- (void)setVolumeBar:(GSVolBar *)bar {
+    objc_setAssociatedObject(self, @selector(volumeBar), bar, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
+- (GSVolBar *)volumeBar {
+    return objc_getAssociatedObject(self, @selector(volumeBar));
+}
 
 - (instancetype)initWithColorScheme:(id)scheme {
     self = %orig;
 
-    if (self && volumeBar) {
-        self.volumeBar = [[GSVolBar alloc] initWithFrame:CGRectMake(self.frame.size.width / 2 - (self.frame.size.width / 2) / 2, 0, self.frame.size.width / 2, 25)];
+    if (self && volumeBarEnabled) {
+        self.volumeBar = [[GSVolBar alloc] initWithFrame:CGRectMake(
+            self.frame.size.width / 2 - (self.frame.size.width / 2) / 2,
+            0,
+            self.frame.size.width / 2,
+            25
+        )];
 
         [self addSubview:self.volumeBar];
     }
@@ -33,15 +48,20 @@ static BOOL volumeBar = YTMU(@"YTMUltimateIsEnabled") && YTMU(@"volBar");
 - (void)layoutSubviews {
     %orig;
 
-    if (volumeBar) {
-        self.volumeBar.frame = CGRectMake(self.frame.size.width / 2 - (self.frame.size.width / 2) / 2, CGRectGetMinY(self.tabView.frame) - 25, self.frame.size.width / 2, 25);
+    if (volumeBarEnabled) {
+        self.volumeBar.frame = CGRectMake(
+            self.frame.size.width / 2 - (self.frame.size.width / 2) / 2,
+            CGRectGetMinY(self.tabView.frame) - 25,
+            self.frame.size.width / 2,
+            25
+        );
     }
 }
 
 - (void)updateColorsAfterLayoutChangeTo:(long long)arg1 {
     %orig;
 
-    if (volumeBar) {
+    if (volumeBarEnabled) {
         [self updateVolBarVisibility];
     }
 }
@@ -49,14 +69,14 @@ static BOOL volumeBar = YTMU(@"YTMUltimateIsEnabled") && YTMU(@"volBar");
 - (void)updateColorsBeforeLayoutChangeTo:(long long)arg1 {
     %orig;
 
-    if (volumeBar) {
+    if (volumeBarEnabled) {
         self.volumeBar.hidden = YES;
     }
 }
 
 %new
 - (void)updateVolBarVisibility {
-    if (volumeBar) {
+    if (volumeBarEnabled) {
         dispatch_async(dispatch_get_main_queue(), ^(void){
             self.volumeBar.hidden = !(self.isExpanded && self.currentLayout == 2);
         });
